@@ -13,8 +13,9 @@ import cv2
 
 
 class Camera:
-    def __init__(self, index=0, width=640, height=480, fps=15):
+    def __init__(self, index=0, width=640, height=480, fps=15, fourcc="MJPG"):
         self.index = index
+        self.fourcc = fourcc
         self.width = width
         self.height = height
         self.fps = max(1, fps)
@@ -37,6 +38,10 @@ class Camera:
             self._cap.release()
             self._cap = None
             return
+        if self.fourcc:
+            # MJPG : flux compressé, indispensable pour une webcam partagée par USB/IP (WSL)
+            # et moins de débit USB en général. Ignoré si la caméra ne le gère pas.
+            self._cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*self.fourcc))
         self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         self._cap.set(cv2.CAP_PROP_FPS, self.fps)

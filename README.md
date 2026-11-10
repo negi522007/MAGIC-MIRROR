@@ -52,6 +52,10 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ---
 
+> 💻 **Sous WSL2 (Windows)** : son via WSLg et webcam via `usbipd-win`, voir [`docs/WSL.md`](docs/WSL.md).
+
+---
+
 ## ▶️ Lancement
 
 ```bash

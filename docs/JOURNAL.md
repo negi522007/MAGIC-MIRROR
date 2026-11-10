@@ -6,6 +6,18 @@ Le plus récent est en haut.
 
 ---
 
+## 2026-11-10 (suite) — Test sous WSL2
+
+- Constat sur le PC de dev : WSLg fournit PulseAudio (`/mnt/wslg/PulseServer`), le noyau WSL
+  (`6.18.33.2-microsoft-standard-WSL2`) a `uvcvideo` et `usbip` en modules ; il manque
+  `libportaudio2` / `libasound2-plugins` et le partage de la webcam par `usbipd-win`.
+- Procédure écrite dans `docs/WSL.md`.
+- Ajout de `camera.fourcc` (défaut `MJPG`) : par USB/IP, le flux brut YUYV sature souvent le lien.
+  Sur une caméra qui ne gère pas MJPG, OpenCV ignore la demande.
+- Dossier local renommé `~/Tekbot/MAGIC-MIRROR` (comme le dépôt) ; dépôt rendu public.
+
+---
+
 ## 2026-11-10 — Refonte : corrections, performances, interface, modèles
 
 ### Point de départ (audit)

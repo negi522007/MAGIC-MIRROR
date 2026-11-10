@@ -50,7 +50,8 @@ class AppController:
         models, llm_cfg, audio_cfg = config["models"], config["llm"], config["audio"]
 
         # ── Vision ──
-        self.camera = Camera(cam_cfg["index"], cam_cfg["width"], cam_cfg["height"], cam_cfg["fps"])
+        self.camera = Camera(cam_cfg["index"], cam_cfg["width"], cam_cfg["height"], cam_cfg["fps"],
+                             cam_cfg.get("fourcc", "MJPG"))
         self.face_detector = FaceDetector(resolve_path(models["face"]), vis_cfg["detect_width"])
         self.visual_features = VisualFeatures()
         self.presence = PresenceMonitor(self.bus, self.camera, self.face_detector,

@@ -47,6 +47,7 @@ DEFAULTS = {
         "width": 640,
         "height": 480,
         "fps": 15,
+        "fourcc": "MJPG",           # format demandé à la webcam ("" = format par défaut)
     },
     "vision": {
         "detect_interval": 0.4,     # s entre deux détections quand quelqu'un est là
