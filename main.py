@@ -5,6 +5,7 @@ TEKBOT Magic Mirror — point d'entrée.
     python main.py                # plein écran, micro + caméra
     python main.py --windowed     # fenêtre (développement)
     python main.py --no-audio     # sans micro ni voix : utiliser le clavier (voir README)
+    python main.py --camera http://WINDOWS_HOST:8090   # webcam Windows diffusée vers WSL
 """
 
 import argparse
@@ -22,6 +23,8 @@ def parse_args():
     parser.add_argument("--windowed", action="store_true", help="désactive le plein écran")
     parser.add_argument("--no-audio", action="store_true", help="ni micro ni synthèse vocale")
     parser.add_argument("--no-llm", action="store_true", help="réponses à base de règles uniquement")
+    parser.add_argument("--camera", default=None,
+                        help="numéro de caméra ou URL de flux (ex. http://WINDOWS_HOST:8090 sous WSL)")
     return parser.parse_args()
 
 
@@ -32,6 +35,8 @@ def main():
         config["ui"]["fullscreen"] = False
     if args.no_llm:
         config["llm"]["enabled"] = False
+    if args.camera is not None:
+        config["camera"]["index"] = args.camera
 
     from core.app_controller import AppController
     controller = AppController(config, audio_enabled=not args.no_audio)

@@ -24,7 +24,7 @@ llm:
   rephrase_style: false    # true : le LLM reformule aussi les conseils de style
 
 camera:
-  index: 0
+  index: 0                 # ou URL de flux, ex. "http://WINDOWS_HOST:8090" (WSL, voir docs/WSL.md)
   width: 640
   height: 480
   fps: 15

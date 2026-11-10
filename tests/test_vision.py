@@ -61,3 +61,13 @@ def test_yunet_loads_when_model_present():
     if not os.path.exists(path):
         pytest.skip("modèle YuNet absent")
     assert FaceDetector(path).backend == "yunet"
+
+
+def test_camera_source_resolution(monkeypatch):
+    import vision.camera as cam
+    monkeypatch.setattr(cam, "windows_host_ip", lambda: "172.29.128.1")
+    assert cam.resolve_source(0) == 0
+    assert cam.resolve_source("1") == 1
+    assert cam.resolve_source("http://WINDOWS_HOST:8090") == "http://172.29.128.1:8090"
+    assert cam.Camera("http://WINDOWS_HOST:8090").is_stream
+    assert not cam.Camera(0).is_stream

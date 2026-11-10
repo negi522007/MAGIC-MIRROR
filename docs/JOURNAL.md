@@ -14,6 +14,18 @@ Le plus récent est en haut.
 - Procédure écrite dans `docs/WSL.md`.
 - Ajout de `camera.fourcc` (défaut `MJPG`) : par USB/IP, le flux brut YUYV sature souvent le lien.
   Sur une caméra qui ne gère pas MJPG, OpenCV ignore la demande.
+- **Webcam par USB/IP : échec.** « VGA WebCam » (BUSID 1-7, usbipd-win 5.3.0) ne propose que
+  YUYV 640x480 / 640x360 à 30 fps, sans MJPG. Images reçues à ~10,5 fps mais tronquées : 94 à 98 %
+  de chaque image verte (données YUV nulles), quelle que soit la résolution demandée. `dmesg` :
+  nombreux `vhci_hcd: unlink ... urb->status -104`. Avec `modprobe uvcvideo nodrop=0 quirks=128`
+  (le pilote jette les trames incomplètes) : 0 image en 10 s. Conclusion : le transfert
+  isochrone par USB/IP ne tient pas un flux YUYV brut ; rien à régler côté Linux.
+- **Solution retenue** : la webcam reste à Windows, ffmpeg la diffuse en MJPEG
+  (`-f mpjpeg -listen 1 http://0.0.0.0:8090`), le miroir lit l'URL. `camera.index` (et l'option
+  `--camera`) accepte désormais une URL ; `WINDOWS_HOST` y est remplacé par la passerelle par
+  défaut de WSL ; un flux coupé est rouvert automatiquement. Testé avec un serveur MJPEG local
+  imitant ffmpeg : 60 images en 4 s (15 fps), visage détecté. Reste à valider avec le vrai ffmpeg
+  Windows (pare-feu).
 - Dossier local renommé `~/Tekbot/MAGIC-MIRROR` (comme le dépôt) ; dépôt rendu public.
 
 ---
