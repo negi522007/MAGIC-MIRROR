@@ -71,3 +71,34 @@ def test_camera_source_resolution(monkeypatch):
     assert cam.resolve_source("http://WINDOWS_HOST:8090") == "http://172.29.128.1:8090"
     assert cam.Camera("http://WINDOWS_HOST:8090").is_stream
     assert not cam.Camera(0).is_stream
+
+
+def test_windows_pipe_parser_returns_latest_complete_frame():
+    import io
+    from vision.windows_camera import WindowsCameraCapture
+
+    def jpeg(value):
+        return cv2.imencode(".jpg", np.full((48, 64, 3), value, np.uint8))[1].tobytes()
+
+    class FakeProc:
+        stdout = io.BytesIO(jpeg(10) + jpeg(120) + jpeg(240)[:50])  # 3e image incomplète
+
+        def poll(self):
+            return None
+
+    cap = WindowsCameraCapture.__new__(WindowsCameraCapture)
+    cap.proc, cap._buffer = FakeProc(), b""
+    ok, frame = cap.read()
+    assert ok and abs(int(frame.mean()) - 120) < 5   # saute la 1re, ignore la 3e tronquée
+    ok, frame = cap.read()
+    assert not ok                                      # flux terminé sans image complète
+
+
+def test_auto_source_off_wsl(monkeypatch):
+    import vision.camera as cam
+    monkeypatch.setattr(cam, "is_wsl", lambda: False)
+    assert cam.resolve_source("auto") == 0
+    monkeypatch.setattr(cam, "is_wsl", lambda: True)
+    monkeypatch.setattr(cam.os.path, "exists", lambda p: False)
+    monkeypatch.setattr(cam, "find_windows_ffmpeg", lambda: "/mnt/c/ffmpeg.exe")
+    assert cam.resolve_source("auto") == "windows"

@@ -26,6 +26,21 @@ Le plus récent est en haut.
   défaut de WSL ; un flux coupé est rouvert automatiquement. Testé avec un serveur MJPEG local
   imitant ffmpeg : 60 images en 4 s (15 fps), visage détecté. Reste à valider avec le vrai ffmpeg
   Windows (pare-feu).
+- **Lancement manuel de ffmpeg jugé peu pratique** (retour utilisateur) → nouvelle source
+  caméra `windows` (`vision/windows_camera.py`) : le miroir lance `ffmpeg.exe` via
+  l'interopérabilité WSL, capture DirectShow, sortie MJPEG sur stdout (`-f image2pipe`), découpage
+  des JPEG (marqueurs FFD8/FFD9) en sautant aux images les plus récentes. `camera.index: auto`
+  (défaut) : `/dev/video0` s'il existe, sinon cette source sous WSL. ffmpeg 9.0.2 installé sous
+  Windows par `winget install Gyan.FFmpeg --scope user`.
+- Résultats : 14 images/s, démarrage 8,5 s au premier lancement (antivirus) puis ~1 s. Les premiers
+  essais donnaient des images **noires** (max ≈ 10/255, bruit) alors que les droits caméra Windows
+  étaient « Allow » ; ni `usbipd unbind` ni les options dshow n'y changeaient rien, puis tout est
+  rentré dans l'ordre après ouverture de l'appli Caméra de Windows (cause exacte non établie :
+  éclairage, cache, ou webcam « réveillée » par l'appli). Ensuite : luminosité ~140/255, image nette.
+- Visage non détecté sur l'image de test (personne allongée, visage à contre-jour, incliné, coupé en
+  bas du cadre) : score YuNet 0,33 en pleine résolution, rien à 320 px, CLAHE sans effet. Seuils
+  laissés tels quels (0,7) pour éviter les fausses détections ; à revoir si les essais face au
+  miroir échouent.
 - Dossier local renommé `~/Tekbot/MAGIC-MIRROR` (comme le dépôt) ; dépôt rendu public.
 
 ---

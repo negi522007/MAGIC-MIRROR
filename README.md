@@ -52,7 +52,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ---
 
-> 💻 **Sous WSL2 (Windows)** : son via WSLg et webcam Windows diffusée par ffmpeg (`--camera http://WINDOWS_HOST:8090`), voir [`docs/WSL.md`](docs/WSL.md).
+> 💻 **Sous WSL2 (Windows)** : son via WSLg ; la webcam Windows est lue automatiquement par `ffmpeg.exe` (à installer une fois : `winget.exe install --id Gyan.FFmpeg -e --scope user`), voir [`docs/WSL.md`](docs/WSL.md).
 
 ---
 

@@ -43,7 +43,7 @@ DEFAULTS = {
         "rephrase_style": False,
     },
     "camera": {
-        "index": 0,
+        "index": "auto",            # auto | numéro | "windows" (WSL) | URL de flux
         "width": 640,
         "height": 480,
         "fps": 15,

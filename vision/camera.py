@@ -6,7 +6,10 @@ Un seul thread lit la caméra (OpenCV n'est pas sûr si plusieurs threads appell
 L'image est déjà retournée horizontalement (effet miroir).
 
 `index` peut être :
+    - "auto" : /dev/video0 s'il existe, sinon (sous WSL) la webcam Windows ;
     - un numéro de périphérique (0 = /dev/video0) ;
+    - "windows" ou "windows:Nom de la webcam" : webcam Windows lue depuis WSL via
+      ffmpeg.exe (voir vision/windows_camera.py) ;
     - une URL de flux (MJPEG / RTSP…), par exemple la webcam Windows diffusée par
       ffmpeg pour WSL (voir docs/WSL.md). Dans l'URL, `WINDOWS_HOST` est remplacé par
       l'adresse de l'hôte Windows vue depuis WSL (passerelle par défaut).
@@ -17,7 +20,11 @@ import subprocess
 import threading
 import time
 
+import os
+
 import cv2
+
+from vision.windows_camera import WindowsCameraCapture, find_windows_ffmpeg, is_wsl
 
 WINDOWS_HOST = "WINDOWS_HOST"
 
@@ -33,7 +40,11 @@ def windows_host_ip():
 
 
 def resolve_source(index):
-    """Numéro de caméra (int) ou URL avec WINDOWS_HOST résolu."""
+    """Numéro de caméra (int), "windows[:nom]" ou URL avec WINDOWS_HOST résolu."""
+    if index == "auto":
+        if os.path.exists("/dev/video0") or not is_wsl() or find_windows_ffmpeg() is None:
+            return 0
+        return "windows"
     if isinstance(index, str):
         if index.isdigit():
             return int(index)
@@ -46,6 +57,7 @@ class Camera:
     def __init__(self, index=0, width=640, height=480, fps=15, fourcc="MJPG"):
         self.index = index
         self.source = resolve_source(index)
+        self.is_windows = isinstance(self.source, str) and self.source.startswith("windows")
         self.is_stream = isinstance(self.source, str)
         self.fourcc = fourcc
         self.width = width
@@ -62,6 +74,10 @@ class Camera:
 
     # ── cycle de vie ──
     def _open(self):
+        if self.is_windows:
+            device = self.source.partition(":")[2] or None
+            cap = WindowsCameraCapture(device, self.width, self.height, self.fps)
+            return cap if cap.isOpened() else None
         cap = cv2.VideoCapture(self.source)
         if not cap.isOpened():
             cap.release()
@@ -128,7 +144,7 @@ class Camera:
                 if failures == 30:
                     print("[CAMERA] ⚠ La caméra ne renvoie plus d'image.")
                 if self.is_stream and failures % 20 == 0:
-                    # Flux réseau coupé (ffmpeg relancé, Wi-Fi…) : on le rouvre.
+                    # Flux coupé (ffmpeg relancé, Wi-Fi, webcam débranchée…) : on le rouvre.
                     if self._cap is not None:
                         self._cap.release()
                     self._cap = self._open()

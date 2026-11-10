@@ -1,8 +1,8 @@
 # Tester le miroir sous WSL2 (Windows 11)
 
 WSL2 n'a pas accès directement à la webcam et au micro. Le son passe par le serveur
-PulseAudio de WSLg ; la webcam est diffusée par Windows sur le réseau local (ffmpeg),
-ou « prêtée » à WSL avec `usbipd-win` (moins fiable).
+PulseAudio de WSLg ; la webcam est lue côté Windows par `ffmpeg.exe`, que le miroir
+lance automatiquement ; le partage par `usbipd-win` est l'alternative (moins fiable).
 
 Vérifié sur : Ubuntu 26.04 sous WSL2, noyau `6.18.33.2-microsoft-standard-WSL2`
 (modules `uvcvideo` et `usbip` présents), WSLg actif (`/mnt/wslg/PulseServer`).
@@ -29,30 +29,33 @@ Laisser `audio.device_id: null` dans `config.yaml` (périphérique par défaut =
 Si le micro reste muet : Windows → Paramètres → Confidentialité → Microphone → autoriser
 les applications de bureau.
 
-## 2. Webcam — méthode recommandée : flux réseau depuis Windows
+## 2. Webcam — méthode recommandée : automatique (ffmpeg.exe lancé par le miroir)
 
-La webcam reste branchée à Windows ; ffmpeg (Windows) la diffuse en MJPEG et le miroir
-(WSL) lit ce flux. Fonctionne avec toutes les webcams.
+La webcam reste à Windows. Sous WSL, avec `camera.index: "auto"` (défaut), le miroir lance
+lui-même `ffmpeg.exe` côté Windows, trouve la webcam (DirectShow) et lit les images par un
+pipe : **rien à lancer sous Windows**, pas de réseau, pas de pare-feu.
 
-Dans PowerShell (normal, pas besoin d'administrateur) :
-
-```powershell
-winget install Gyan.FFmpeg                                   # une seule fois, puis rouvrir PowerShell
-ffmpeg -list_devices true -f dshow -i dummy                  # nom exact de la webcam, ex. "VGA WebCam"
-ffmpeg -f dshow -video_size 640x480 -i video="VGA WebCam" -vf fps=15 -c:v mjpeg -q:v 5 -f mpjpeg -listen 1 http://0.0.0.0:8090
-```
-
-Au premier lancement, autoriser ffmpeg dans la fenêtre du pare-feu Windows (réseaux privés).
-Laisser cette fenêtre ouverte, puis dans WSL :
+Une seule fois, installer ffmpeg sous Windows (depuis WSL ou PowerShell, sans administrateur) :
 
 ```bash
-./scripts/run.sh --windowed --camera http://WINDOWS_HOST:8090
+winget.exe install --id Gyan.FFmpeg -e --scope user
 ```
 
-`WINDOWS_HOST` est remplacé automatiquement par l'adresse de Windows vue depuis WSL (passerelle
-par défaut, ex. `172.29.128.1`). `-listen 1` ne sert qu'un client à la fois et s'arrête quand le
-miroir se ferme : relancer la commande ffmpeg avant chaque essai. Si le flux est coupé pendant
-que le miroir tourne, il se reconnecte tout seul.
+Puis :
+
+```bash
+./scripts/run.sh --windowed
+```
+
+- Le miroir cherche `ffmpeg.exe` dans le PATH Windows puis dans les dossiers de winget
+  (`vision/windows_camera.py`). Au tout premier lancement, l'antivirus peut le ralentir (~15 s).
+- Plusieurs webcams : `--camera "windows:Nom exact"` (noms : `ffmpeg.exe -list_devices true -f dshow -i dummy`).
+- La webcam ne doit pas être prêtée à WSL par usbipd (`usbipd unbind --busid …` si besoin),
+  ni ouverte par une autre application (Caméra, Teams…).
+
+Variante réseau (si ffmpeg tourne sur une autre machine) :
+`ffmpeg -f dshow -i video="VGA WebCam" -vf fps=15 -c:v mjpeg -q:v 5 -f mpjpeg -listen 1 http://0.0.0.0:8090`
+puis `--camera http://WINDOWS_HOST:8090`.
 
 ## 3. Webcam — autre méthode : USB/IP (`usbipd-win`)
 
@@ -86,7 +89,9 @@ v4l2-ctl --list-formats-ext -d /dev/video0   # MJPG doit apparaître
 |---|---|---|
 | « PortAudio library not found » | `libportaudio2` absent | étape 1 |
 | Aucun son, pas d'erreur | ALSA ne passe pas par Pulse | `libasound2-plugins`, puis `echo $PULSE_SERVER` (doit valoir `unix:/mnt/wslg/PulseServer`) |
-| « Caméra http://… introuvable » | ffmpeg pas lancé, ou bloqué par le pare-feu | relancer la commande ffmpeg ; autoriser ffmpeg dans le pare-feu Windows |
+| « ffmpeg.exe introuvable côté Windows » | ffmpeg non installé | `winget.exe install --id Gyan.FFmpeg -e --scope user` |
+| « Aucune webcam vue par Windows » | webcam prêtée à WSL ou utilisée ailleurs | `usbipd unbind --busid …` ; fermer Caméra / Teams |
+| Image noire alors que l'appli Caméra de Windows fonctionne | constaté une fois juste après un `usbipd unbind` ; rentré dans l'ordre après ouverture de l'appli Caméra | ouvrir puis fermer l'appli Caméra, relancer le miroir |
 | « Caméra 0 introuvable » | (USB/IP) webcam non attachée ou module absent | `usbipd attach …` puis `sudo modprobe uvcvideo` |
 | `/dev/video0` existe mais permission refusée | utilisateur hors du groupe `video` | `usermod -aG video`, puis `wsl --shutdown` |
 | Image en grande partie verte / aucune image | (USB/IP) trames YUYV tronquées | utiliser la méthode ffmpeg (section 2) |
