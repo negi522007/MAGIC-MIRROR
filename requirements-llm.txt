@@ -1,0 +1,2 @@
+# IA locale optionnelle : compile llama.cpp pour le CPU (gcc + cmake requis).
+llama-cpp-python>=0.3.36

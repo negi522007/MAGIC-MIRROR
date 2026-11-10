@@ -1,0 +1,10 @@
+# Dépendances directes du miroir (CPU uniquement, ~150 Mo installées).
+# L'ancien fichier était un `pip freeze` de 170 paquets (torch, CUDA...) ;
+# l'IA locale optionnelle est dans requirements-llm.txt.
+numpy>=1.26
+opencv-python-headless>=4.8   # YuNet (cv2.FaceDetectorYN) demande OpenCV >= 4.8
+Pillow>=10.0
+PyYAML>=6.0
+vosk>=0.3.45
+sounddevice>=0.4.6
+piper-tts>=1.3

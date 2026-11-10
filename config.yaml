@@ -1,0 +1,52 @@
+# Configuration du miroir magique.
+# Seules les clés présentes ici surchargent les valeurs par défaut de config.py.
+
+audio:
+  device_id: null          # ID du micro : lancer `python scripts/find_micro.py`
+  output_device_id: null   # ID du haut-parleur (null = par défaut)
+  sample_rate: 16000
+  block_size: 4000
+
+models:
+  vosk: "models/vosk-model-small-fr-0.22"
+  face: "models/face_detection_yunet_2023mar.onnx"
+  piper_voice: "models/piper/fr_FR-siwis-medium.onnx"
+  llm: "models/llm/Qwen3.5-2B-Q4_K_M.gguf"
+
+tts:
+  backends: ["piper", "coqui", "pyttsx3"]
+
+llm:
+  enabled: true
+  n_threads: 3
+  max_tokens: 90
+  timeout: 12
+  rephrase_style: false    # true : le LLM reformule aussi les conseils de style
+
+camera:
+  index: 0
+  width: 640
+  height: 480
+  fps: 15
+
+vision:
+  detect_interval: 0.4
+  idle_detect_interval: 1.0
+
+context:
+  climate: "temperate"     # "tropical" pour les saisons sèches / pluvieuses
+
+ui:
+  fullscreen: true
+  fps: 20
+  overlay_fade_delay: 8000
+  typing_speed: 25
+  sleep_after: 60
+
+wake_word:
+  phrase: "miroir magique"
+  cooldown: 3
+  use_grammar: true
+
+stt:
+  timeout: 8
